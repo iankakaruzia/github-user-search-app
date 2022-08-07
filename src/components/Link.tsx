@@ -4,7 +4,7 @@ type LinkProps = {
 }
 
 export function Link({ href, label }: LinkProps) {
-  const isValidLink = label !== null || href !== ''
+  const isValidLink = (label !== null && label !== '') || href !== ''
 
   return (
     <a
