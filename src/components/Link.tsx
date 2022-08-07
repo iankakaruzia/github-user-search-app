@@ -1,15 +1,15 @@
 type LinkProps = {
-  href: string
+  href?: string
   label: string | null
 }
 
 export function Link({ href, label }: LinkProps) {
-  const isValidLink = (label !== null && label !== '') || href !== ''
-
   return (
     <a
       href={href}
-      className={!isValidLink ? 'pointer-events-none' : 'hover:underline'}
+      className={`${
+        !href ? 'pointer-events-none' : 'hover:underline'
+      } md:block md:overflow-hidden md:text-ellipsis`}
       target='_blank'
       rel='noreferrer'
     >

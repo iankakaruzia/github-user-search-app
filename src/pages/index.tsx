@@ -1,17 +1,29 @@
 import { useState } from 'react'
-import type { NextPage } from 'next'
 import { format } from 'date-fns'
+import Image from 'next/image'
+import type { NextPage } from 'next'
 
 import type { User } from 'services/users'
+import type { Statistic } from 'components/Statistics'
 import { getUserInfo } from 'services/users'
 import { ThemeSwitcher } from 'components/ThemeSwitcher'
-import Image from 'next/image'
 import { Link } from 'components/Link'
 import { SearchBox } from 'components/SearchBox'
+import { Statistics } from 'components/Statistics'
 
 type Props = {
   defaultUser: User
 }
+
+const withHttp = (url: string) =>
+  url.replace(/^(?:(.*:)?\/\/)?(.*)/i, (match, schema, nonSchemaUrl) =>
+    schema ? match : `https://${nonSchemaUrl}`
+  )
+
+const isEmptyObj = (obj: object) =>
+  obj &&
+  Object.keys(obj).length === 0 &&
+  Object.getPrototypeOf(obj) === Object.prototype
 
 const Home: NextPage<Props> = ({ defaultUser }) => {
   const [user, setUser] = useState(defaultUser)
@@ -22,7 +34,7 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
       !user.company.includes('@') ||
       user.company.trim().includes(' ')
     ) {
-      return ''
+      return
     }
 
     const [, domain] = user.company.split('@')
@@ -31,10 +43,18 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
 
   const generateTwitterHref = () => {
     if (!user.twitter_username) {
-      return ''
+      return
     }
 
     return `https://twitter.com/${user.twitter_username}`
+  }
+
+  const generateBlogHref = () => {
+    if (!user.blog) {
+      return
+    }
+
+    return withHttp(user.blog)
   }
 
   async function onSearch(search: string) {
@@ -49,150 +69,154 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
     }
   }
 
+  const stats: Statistic[] = [
+    {
+      label: 'Repos',
+      value: user.public_repos
+    },
+    {
+      label: 'Followers',
+      value: user.followers
+    },
+    {
+      label: 'Following',
+      value: user.following
+    }
+  ]
+
   return (
-    <div className='flex flex-col px-6 pt-8 pb-20'>
-      <div>
-        <header className='mb-9 flex items-center justify-between'>
+    <div className='flex flex-col px-6 pt-8 pb-20 md:pb-60 md:pt-[140px] lg:pb-[170px] lg:pt-36'>
+      <div className='md:mx-auto md:w-full md:max-w-[573px] lg:max-w-[720px]'>
+        <header className='mb-9 flex items-center justify-between lg:mb-[35px]'>
           <strong className='text-heading1 font-bold text-gray-700 dark:text-white'>
             devfinder
           </strong>
           <ThemeSwitcher />
         </header>
 
-        <section className='mb-4 h-[60px] rounded-2xl bg-gray-100 shadow-xl dark:bg-blue-900 dark:shadow-none'>
-          <SearchBox onSearch={onSearch} />
-        </section>
+        <SearchBox onSearch={onSearch} />
 
-        <main className='rounded-2xl bg-gray-100 px-6 pt-8 pb-12 shadow-xl dark:bg-blue-900 dark:shadow-none'>
-          <section className='flex items-center'>
-            <div className='relative mr-5 min-h-[70px] min-w-[70px] overflow-hidden rounded-full'>
-              <Image
-                src={user.avatar_url}
-                alt={`${user.name ?? user.login} profile`}
-                layout='fill'
-                priority
-              />
-            </div>
-            <div className='flex flex-col'>
-              <h1 className='font-bold text-gray-600 dark:text-white'>
-                {user.name ?? user.login}
-              </h1>
-              <span className='text-heading4 text-blue-500'>@{user.login}</span>
-              <span className='text-heading4 text-gray-500 dark:text-white'>
-                Joined {format(new Date(user.created_at), 'dd MMM yyyy')}
-              </span>
-            </div>
-          </section>
+        <main className='rounded-2xl bg-gray-100 px-6 pt-8 pb-12 shadow-xl dark:bg-blue-900 dark:shadow-none md:p-10 lg:p-12'>
+          {isEmptyObj(user) ? (
+            <h1 className='text-heading1 font-bold'>
+              Please use the search input to find a github profile
+            </h1>
+          ) : (
+            <>
+              <section className='flex items-center lg:items-start'>
+                <div className='relative mr-5 min-h-[70px] min-w-[70px] overflow-hidden rounded-full md:mr-10 md:min-h-[117px] md:min-w-[117px] lg:mr-[37px]'>
+                  <Image
+                    src={user.avatar_url}
+                    alt={`${!!user.name ? user.name : user.login} profile`}
+                    layout='fill'
+                    loading='eager'
+                  />
+                </div>
+                <div className='flex flex-col lg:relative lg:-mt-1 lg:flex-1'>
+                  <h1 className='font-bold text-gray-600 dark:text-white md:mb-[2px] md:text-heading1'>
+                    {!!user.name ? user.name : user.login}
+                  </h1>
+                  <span className='mb-[6px] block text-heading4 text-blue-500 md:mb-[4px] md:text-base'>
+                    @{user.login}
+                  </span>
+                  <span className='text-heading4 text-gray-500 dark:text-white md:text-[15px] md:leading-[22px] lg:absolute lg:right-0 lg:top-2'>
+                    Joined{' '}
+                    {format(
+                      new Date(user.created_at ?? new Date()),
+                      'dd MMM yyyy'
+                    )}
+                  </span>
+                </div>
+              </section>
 
-          <section className='mt-8 mb-6'>
-            <p className={`text-body${!user.bio ? ' opacity-75' : ''}`}>
-              {user.bio ?? 'This profile has no bio'}
-            </p>
-          </section>
+              <section className='mt-8 mb-6 md:mt-6 md:mb-8 lg:-mt-10 lg:pl-[154px]'>
+                <p className={`text-body ${!user.bio ? 'opacity-75' : ''}`}>
+                  {user.bio ?? 'This profile has no bio'}
+                </p>
+              </section>
 
-          <section className='grid grid-flow-col grid-cols-3 rounded-[10px] bg-gray-200 px-[14px] py-[18px] dark:bg-gray-900'>
-            <div className='flex flex-col items-center'>
-              <span className='mb-2 block text-[11px] leading-4'>Repos</span>
-              <span className='font-bold text-gray-600 dark:text-white'>
-                {user.public_repos}
-              </span>
-            </div>
+              <Statistics stats={stats} />
 
-            <div className='flex flex-col items-center'>
-              <span className='mb-2 block text-[11px] leading-4'>
-                Followers
-              </span>
-              <span className='font-bold text-gray-600 dark:text-white'>
-                {user.followers}
-              </span>
-            </div>
+              <section className='mt-6 lg:mt-[37px] lg:pl-[154px]'>
+                <ul className='flex flex-col gap-4 md:grid md:grid-flow-row md:grid-cols-2'>
+                  <li className='flex items-center md:order-1'>
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='14'
+                      height='20'
+                      className='mr-[19px]'
+                    >
+                      <path
+                        className={`fill-blue-700 dark:fill-white ${
+                          !user.location ? 'opacity-75' : ''
+                        }`}
+                        d='M12.797 3.425C11.584 1.33 9.427.05 7.03.002a7.483 7.483 0 00-.308 0C4.325.05 2.17 1.33.955 3.425a6.963 6.963 0 00-.09 6.88l4.959 9.077.007.012c.218.38.609.606 1.045.606.437 0 .828-.226 1.046-.606l.007-.012 4.96-9.077a6.963 6.963 0 00-.092-6.88zm-5.92 5.638c-1.552 0-2.813-1.262-2.813-2.813s1.261-2.812 2.812-2.812S9.69 4.699 9.69 6.25 8.427 9.063 6.876 9.063z'
+                      ></path>
+                    </svg>
+                    <span className='md:text-body'>
+                      {user.location ?? 'Not Available'}
+                    </span>
+                  </li>
 
-            <div className='flex flex-col items-center'>
-              <span className='mb-2 block text-[11px] leading-4'>
-                Following
-              </span>
-              <span className='font-bold text-gray-600 dark:text-white'>
-                {user.following}
-              </span>
-            </div>
-          </section>
+                  <li className='flex items-center  md:order-3'>
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='20'
+                      height='20'
+                      className='mr-[13px] md:min-h-[20px] md:min-w-[20px]'
+                    >
+                      <g
+                        className={`fill-blue-700 dark:fill-white ${
+                          !user.blog ? 'opacity-75' : ''
+                        }`}
+                      >
+                        <path d='M7.404 5.012c-2.355 2.437-1.841 6.482.857 8.273.089.06.207.048.283-.027.568-.555 1.049-1.093 1.47-1.776a.213.213 0 00-.084-.3A2.743 2.743 0 018.878 10.1a2.64 2.64 0 01-.223-1.803c.168-.815 1.043-1.573 1.711-2.274l-.004-.002 2.504-2.555a2.568 2.568 0 013.648-.019 2.6 2.6 0 01.037 3.666l-1.517 1.56a.266.266 0 00-.06.273c.35 1.012.435 2.44.201 3.519-.006.03.031.05.053.028l3.228-3.295c2.062-2.105 2.044-5.531-.04-7.615a5.416 5.416 0 00-7.691.04L7.417 4.998l-.013.014z'></path>
+                        <path d='M13.439 13.75a.401.401 0 00.006-.003c.659-1.204.788-2.586.48-3.933l-.002.002-.001-.001a5.434 5.434 0 00-2.19-3.124.3.3 0 00-.333.015c-.553.448-1.095 1.021-1.452 1.754a.243.243 0 00.096.317c.415.24.79.593 1.04 1.061h.001c.196.33.388.958.263 1.632-.116.894-1.019 1.714-1.736 2.453-.546.559-1.935 1.974-2.49 2.542a2.6 2.6 0 01-3.666.037 2.6 2.6 0 01-.038-3.666l1.521-1.564A.266.266 0 005 11.004c-.338-1.036-.43-2.432-.217-3.51.006-.03-.031-.049-.053-.027l-3.179 3.245c-2.083 2.126-2.066 5.588.04 7.693 2.125 2.083 5.57 2.048 7.653-.078.723-.81 3.821-3.678 4.195-4.577z'></path>
+                      </g>
+                    </svg>
+                    <Link href={generateBlogHref()} label={user.blog} />
+                  </li>
 
-          <section className='mt-6'>
-            <ul className='flex flex-col gap-4'>
-              <li className='flex items-center'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='14'
-                  height='20'
-                  className='mr-[19px]'
-                >
-                  <path
-                    className={`fill-blue-700 dark:fill-white${
-                      !user.location ? ' opacity-75' : ''
-                    }`}
-                    d='M12.797 3.425C11.584 1.33 9.427.05 7.03.002a7.483 7.483 0 00-.308 0C4.325.05 2.17 1.33.955 3.425a6.963 6.963 0 00-.09 6.88l4.959 9.077.007.012c.218.38.609.606 1.045.606.437 0 .828-.226 1.046-.606l.007-.012 4.96-9.077a6.963 6.963 0 00-.092-6.88zm-5.92 5.638c-1.552 0-2.813-1.262-2.813-2.813s1.261-2.812 2.812-2.812S9.69 4.699 9.69 6.25 8.427 9.063 6.876 9.063z'
-                  ></path>
-                </svg>
-                <span>{user.location ?? 'Not Available'}</span>
-              </li>
+                  <li className='flex items-center  md:order-2'>
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='20'
+                      height='18'
+                      className='mr-[13px]'
+                    >
+                      <path
+                        className={`fill-blue-700 dark:fill-white ${
+                          !user.twitter_username ? 'opacity-75' : ''
+                        }`}
+                        d='M20 2.799a8.549 8.549 0 01-2.363.647 4.077 4.077 0 001.804-2.266 8.194 8.194 0 01-2.6.993A4.099 4.099 0 009.75 4.977c0 .324.027.637.095.934-3.409-.166-6.425-1.8-8.452-4.288a4.128 4.128 0 00-.56 2.072c0 1.42.73 2.679 1.82 3.408A4.05 4.05 0 01.8 6.598v.045a4.119 4.119 0 003.285 4.028 4.092 4.092 0 01-1.075.135c-.263 0-.528-.015-.776-.07.531 1.624 2.038 2.818 3.831 2.857A8.239 8.239 0 01.981 15.34 7.68 7.68 0 010 15.285a11.543 11.543 0 006.29 1.84c7.545 0 11.67-6.25 11.67-11.667 0-.182-.006-.357-.015-.53A8.18 8.18 0 0020 2.798z'
+                      ></path>
+                    </svg>
+                    <Link
+                      href={generateTwitterHref()}
+                      label={user.twitter_username}
+                    />
+                  </li>
 
-              <li className='flex items-center'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='20'
-                  height='20'
-                  className='mr-[13px]'
-                >
-                  <g
-                    className={`fill-blue-700 dark:fill-white${
-                      !user.blog ? ' opacity-75' : ''
-                    }`}
-                  >
-                    <path d='M7.404 5.012c-2.355 2.437-1.841 6.482.857 8.273.089.06.207.048.283-.027.568-.555 1.049-1.093 1.47-1.776a.213.213 0 00-.084-.3A2.743 2.743 0 018.878 10.1a2.64 2.64 0 01-.223-1.803c.168-.815 1.043-1.573 1.711-2.274l-.004-.002 2.504-2.555a2.568 2.568 0 013.648-.019 2.6 2.6 0 01.037 3.666l-1.517 1.56a.266.266 0 00-.06.273c.35 1.012.435 2.44.201 3.519-.006.03.031.05.053.028l3.228-3.295c2.062-2.105 2.044-5.531-.04-7.615a5.416 5.416 0 00-7.691.04L7.417 4.998l-.013.014z'></path>
-                    <path d='M13.439 13.75a.401.401 0 00.006-.003c.659-1.204.788-2.586.48-3.933l-.002.002-.001-.001a5.434 5.434 0 00-2.19-3.124.3.3 0 00-.333.015c-.553.448-1.095 1.021-1.452 1.754a.243.243 0 00.096.317c.415.24.79.593 1.04 1.061h.001c.196.33.388.958.263 1.632-.116.894-1.019 1.714-1.736 2.453-.546.559-1.935 1.974-2.49 2.542a2.6 2.6 0 01-3.666.037 2.6 2.6 0 01-.038-3.666l1.521-1.564A.266.266 0 005 11.004c-.338-1.036-.43-2.432-.217-3.51.006-.03-.031-.049-.053-.027l-3.179 3.245c-2.083 2.126-2.066 5.588.04 7.693 2.125 2.083 5.57 2.048 7.653-.078.723-.81 3.821-3.678 4.195-4.577z'></path>
-                  </g>
-                </svg>
-                <Link href={user.blog ?? ''} label={user.blog} />
-              </li>
-
-              <li className='flex items-center'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='20'
-                  height='18'
-                  className='mr-[13px]'
-                >
-                  <path
-                    className={`fill-blue-700 dark:fill-white${
-                      !user.twitter_username ? ' opacity-75' : ''
-                    }`}
-                    d='M20 2.799a8.549 8.549 0 01-2.363.647 4.077 4.077 0 001.804-2.266 8.194 8.194 0 01-2.6.993A4.099 4.099 0 009.75 4.977c0 .324.027.637.095.934-3.409-.166-6.425-1.8-8.452-4.288a4.128 4.128 0 00-.56 2.072c0 1.42.73 2.679 1.82 3.408A4.05 4.05 0 01.8 6.598v.045a4.119 4.119 0 003.285 4.028 4.092 4.092 0 01-1.075.135c-.263 0-.528-.015-.776-.07.531 1.624 2.038 2.818 3.831 2.857A8.239 8.239 0 01.981 15.34 7.68 7.68 0 010 15.285a11.543 11.543 0 006.29 1.84c7.545 0 11.67-6.25 11.67-11.667 0-.182-.006-.357-.015-.53A8.18 8.18 0 0020 2.798z'
-                  ></path>
-                </svg>
-                <Link
-                  href={generateTwitterHref()}
-                  label={user.twitter_username}
-                />
-              </li>
-
-              <li className='flex items-center'>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  width='20'
-                  height='20'
-                  className='mr-[13px]'
-                >
-                  <path
-                    className={`fill-blue-700 dark:fill-white${
-                      !user.company ? ' opacity-75' : ''
-                    }`}
-                    d='M10.858 1.558L1.7.167A1.477 1.477 0 00.517.492 1.49 1.49 0 000 1.608v17.559c0 .458.375.833.833.833h2.709v-4.375c0-.808.65-1.458 1.458-1.458h2.083c.809 0 1.459.65 1.459 1.458V20h3.541V3a1.46 1.46 0 00-1.225-1.442zM4.583 12.292h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm4.167 7.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm10.1 4.243l-5.933-1.242V20h5.625A1.46 1.46 0 0020 18.542V10.46c0-.688-.47-1.274-1.15-1.425zM16.875 17.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25z'
-                  ></path>
-                </svg>
-                <Link href={generateCompanyHref()} label={user.company} />
-              </li>
-            </ul>
-          </section>
+                  <li className='flex items-center  md:order-4'>
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      width='20'
+                      height='20'
+                      className='mr-[13px]'
+                    >
+                      <path
+                        className={`fill-blue-700 dark:fill-white ${
+                          !user.company ? 'opacity-75' : ''
+                        }`}
+                        d='M10.858 1.558L1.7.167A1.477 1.477 0 00.517.492 1.49 1.49 0 000 1.608v17.559c0 .458.375.833.833.833h2.709v-4.375c0-.808.65-1.458 1.458-1.458h2.083c.809 0 1.459.65 1.459 1.458V20h3.541V3a1.46 1.46 0 00-1.225-1.442zM4.583 12.292h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm4.167 7.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5H7.5a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm10.1 4.243l-5.933-1.242V20h5.625A1.46 1.46 0 0020 18.542V10.46c0-.688-.47-1.274-1.15-1.425zM16.875 17.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25zm0-2.5h-1.25a.625.625 0 010-1.25h1.25a.625.625 0 010 1.25z'
+                      ></path>
+                    </svg>
+                    <Link href={generateCompanyHref()} label={user.company} />
+                  </li>
+                </ul>
+              </section>
+            </>
+          )}
         </main>
       </div>
     </div>
@@ -200,11 +224,18 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
 }
 
 export async function getServerSideProps() {
-  const defaultUser = await getUserInfo('octocat')
-
-  return {
-    props: {
-      defaultUser
+  try {
+    const defaultUser = await getUserInfo('octocat')
+    return {
+      props: {
+        defaultUser
+      }
+    }
+  } catch (error) {
+    return {
+      props: {
+        defaultUser: {}
+      }
     }
   }
 }
