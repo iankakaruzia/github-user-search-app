@@ -51,7 +51,7 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
 
   return (
     <div className='flex flex-col px-6 pt-8 pb-20'>
-      <main>
+      <div>
         <header className='mb-9 flex items-center justify-between'>
           <strong className='text-heading1 font-bold text-gray-700 dark:text-white'>
             devfinder
@@ -63,7 +63,7 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
           <SearchBox onSearch={onSearch} />
         </section>
 
-        <div className='rounded-2xl bg-gray-100 px-6 pt-8 pb-12 shadow-xl dark:bg-blue-900 dark:shadow-none'>
+        <main className='rounded-2xl bg-gray-100 px-6 pt-8 pb-12 shadow-xl dark:bg-blue-900 dark:shadow-none'>
           <section className='flex items-center'>
             <div className='relative mr-5 min-h-[70px] min-w-[70px] overflow-hidden rounded-full'>
               <Image
@@ -193,14 +193,13 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
               </li>
             </ul>
           </section>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
 
 export async function getServerSideProps() {
-  // const defaultUser = await getUserInfo('diego3g')
   const defaultUser = await getUserInfo('octocat')
 
   return {
