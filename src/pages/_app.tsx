@@ -7,7 +7,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider attribute='class'>
       <Head>
-        <title>Github User Search</title>
+        <title>devfinder - Github</title>
         <link
           rel='shortcut icon'
           href='/assets/favicon-32x32.png'
