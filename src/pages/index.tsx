@@ -110,6 +110,7 @@ const Home: NextPage<Props> = ({ defaultUser }) => {
                     alt={`${!!user.name ? user.name : user.login} profile`}
                     layout='fill'
                     loading='eager'
+                    sizes='(max-width: 768px) 70px, 117px'
                   />
                 </div>
                 <div className='flex flex-col lg:relative lg:-mt-1 lg:flex-1'>
