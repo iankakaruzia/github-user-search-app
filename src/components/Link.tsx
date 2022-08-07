@@ -12,6 +12,7 @@ export function Link({ href, label }: LinkProps) {
       } md:block md:overflow-hidden md:text-ellipsis`}
       target='_blank'
       rel='noreferrer'
+      aria-disabled={!href}
     >
       <span className={!label ? 'opacity-75' : ''}>
         {!!label ? label : 'Not Available'}
